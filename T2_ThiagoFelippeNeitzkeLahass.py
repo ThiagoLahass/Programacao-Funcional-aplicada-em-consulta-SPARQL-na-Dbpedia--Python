@@ -1,4 +1,5 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
+from functools import reduce
 
 
 # =======================================================================================
@@ -82,11 +83,11 @@ def busca_fabricantes_por_nome(car_data, nome):
     
 # Função para contar a quantidade de modelos fabricados por um fabricante
 def qtd_modelos_fabricante(car_data, fabricante):
-    return len( list( filter( lambda car: car['manufacturer'] == fabricante, car_data ) ) )
+    return reduce(lambda count, car: count + 1 if car['manufacturer'] == fabricante else count, car_data, 0)
 
 # Função para contar a quantidade de modelos de fabricantes cujo ano de fundação seja na década de 1930
 def qtd_modelos_fabricante_30s(car_data, fabricante):
-    return len(list(filter(lambda car: car['manufacturer'] == fabricante and 1930 <= int(car['foundingYear'][:4]) < 1940, car_data)))
+    return reduce(lambda count, car: count + 1 if car['manufacturer'] == fabricante and 1930 <= int(car['foundingYear'][:4]) < 1940 else count, car_data, 0)
 
 # Função para verificar se um fabricante fornece carros mundialmente
 def fabricantes_que_vendem_mundialmente(car_data, fabricante):
@@ -139,13 +140,7 @@ def novo_modelo(car_data, modelo, last_year):
 
 # Função para contar a quantidade de fabricantes por país
 def qtd_fabricantes_por_pais(car_data):
-    fabricantes_pais = {}
-    for car in car_data:
-        pais = car['manufacturerCountry']
-        if pais in fabricantes_pais:
-            fabricantes_pais[pais] += 1
-        else:
-            fabricantes_pais[pais] = 1
+    fabricantes_pais = reduce(lambda count_dict, car: {**count_dict, car['manufacturerCountry']: count_dict.get(car['manufacturerCountry'], 0) + 1}, car_data, {})
     return fabricantes_pais
 
 # =======================================================================================
@@ -189,7 +184,7 @@ CARS_DATA = getResults(RESULTS)
 ## 4.1 Consulta de fabricantes de um modelo específico (exemplo: Cadillac Celestiq):
 # print(busca_fabricantes_por_nome(CARS_DATA, 'Cadillac Celestiq'))                                     (?????????????????? COMO FAZER ISSO?)
 ## 4.2 Consulta de quantidade de modelos fabricados por um fabricante (exemplo: Toyota):
-# print(qtd_modelos_fabricante(CARS_DATA, 'Toyota'))
+print(qtd_modelos_fabricante(CARS_DATA, 'Toyota'))
 
 ## 5. Consultas relacionadas a década de lançamento do carro:
 ## 5.1 Consulta de década de lançamento de um modelo específico (exemplo: Toyota RAV4):
