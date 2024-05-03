@@ -1,3 +1,116 @@
+from SPARQLWrapper import SPARQLWrapper, JSON
+
+# Configurar o endpoint SPARQL
+sparql = SPARQLWrapper("https://dbpedia.org/sparql")
+
+# Configurar Query
+sparql.setQuery("""
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX dbo: <http://dbpedia.org/ontology/>
+PREFIX dbp: <http://dbpedia.org/property/>
+
+SELECT DISTINCT ?model ?yearCar ?class ?manufacturer ?foundingYear ?manufacturerCountry ?areaServed
+WHERE {
+    ?carro_uri a dbo:Automobile;
+                rdfs:label ?model;
+                dbo:productionStartYear ?productionStartYear;
+                dbo:class/rdfs:label ?class;
+                dbo:manufacturer ?manufacturer_uri.
+    ?manufacturer_uri rdfs:label ?manufacturer;
+                       dbo:foundingYear ?manufacturerFoundingYear;
+                       dbp:locationCountry ?manufacturerCountry.
+    OPTIONAL {?manufacturer_uri dbp:areaServed ?areaServed}
+    BIND (xsd:gYear(?productionStartYear) as ?yearCar)
+    BIND (xsd:gYear(?manufacturerFoundingYear) as ?foundingYear)
+    FILTER (lang(?model) = 'en')
+    FILTER (lang(?class) = 'en')
+    FILTER (lang(?manufacturer) = 'en')
+    FILTER (lang(?manufacturerCountry) = 'en')
+    FILTER (lang(?areaServed) = 'en')
+}
+ORDER BY ASC(?yearCar)
+""")
+
+# Definir o formato da resposta como JSON
+sparql.setReturnFormat(JSON)
+
+# Executar a consulta e obter os resultados
+RESULTS = sparql.query().convert()
+
+# Processar os resultados
+def getRes(resDcit):
+    VALUES = resDcit['results']['bindings']
+    return list( map ( lambda item: dict( map ( lambda key: (key, item[key]['value']), item.keys() )), VALUES) )
+
+# Buscando os modelos que contém determinado nome
+def filtra_modelo_nome(lista, nome):
+    return list( filter( lambda x: x['model'].__contains__(nome) , lista ) )
+
+# Buscando os fabricantes que contém determinado nome
+def filtra_fabricantes_nome(lista, nome):
+    return list( filter( lambda x: x['manufacturer'].__contains__(nome) , lista ) )
+
+# Função para filtrar carros lançados antes de um determinado ano
+def filtra_carros_por_ano(cars_data, year):
+    return list( filter( lambda car: car['yearCar'] < year, cars_data ) ) 
+
+
+# Pegando os resultados e "limpando eles"
+CARS_DATA = getRes(RESULTS)
+
+# Exemplo de uso: filtrar carros lançados antes de 1960
+# print(filtra_carros_por_ano(CARS_DATA, '1960-01-01'))
+
+# Exemplo de uso: filtrar modelos que contenham o nome "Corolla"
+# print(filtra_modelo_nome(CARS_DATA, 'Corolla'))
+
+# Exemplo de uso: filtrar fabricantes que contenham o nome "Toyota"
+print(filtra_fabricantes_nome(CARS_DATA, 'Toyota'))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # :- data_source(
 # dbpedia_carros,
 # sparql("PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
