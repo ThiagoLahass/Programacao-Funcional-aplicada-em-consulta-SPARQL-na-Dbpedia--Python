@@ -1,5 +1,10 @@
 from SPARQLWrapper import SPARQLWrapper, JSON
 
+
+# =======================================================================================
+# ======================================== BUSCA ========================================
+# =======================================================================================
+
 # Configurar o endpoint SPARQL
 sparql = SPARQLWrapper("https://dbpedia.org/sparql")
 
@@ -38,38 +43,176 @@ sparql.setReturnFormat(JSON)
 # Executar a consulta e obter os resultados
 RESULTS = sparql.query().convert()
 
+# =======================================================================================
+# ======================================== BUSCA ========================================
+# =======================================================================================
+
+
+# =======================================================================================
+# ======================================== REGRAS =======================================
+# =======================================================================================
+
 # Processar os resultados
-def getRes(resDcit):
+def getResults(resDcit):
     VALUES = resDcit['results']['bindings']
     return list( map ( lambda item: dict( map ( lambda key: (key, item[key]['value']), item.keys() )), VALUES) )
 
-# Buscando os modelos que contém determinado nome
-def filtra_modelo_nome(lista, nome):
-    return list( filter( lambda x: x['model'].__contains__(nome) , lista ) )
+# Função para filtrar carros lançados em um determinado ano
+def busca_carro_por_ano(cars_data, year):
+    return list( filter( lambda car: int(car['yearCar'][:4]) == year, cars_data ) ) 
 
-# Buscando os fabricantes que contém determinado nome
-def filtra_fabricantes_nome(lista, nome):
-    return list( filter( lambda x: x['manufacturer'].__contains__(nome) , lista ) )
+# Função para buscar carros por parte do nome
+def busca_carro_por_nome(car_data, nome):
+    return list( filter( lambda car: car['model'].__contains__(nome) , car_data ) )
 
-# Função para filtrar carros lançados antes de um determinado ano
-def filtra_carros_por_ano(cars_data, year):
-    return list( filter( lambda car: car['yearCar'] < year, cars_data ) ) 
+# Função para buscar carros pela Classe
+def busca_carro_por_classe(car_data, classe):
+    return list( filter( lambda car: car['class'].__contains__(classe) , car_data ) )
 
+# Função para verificar se um carro é antigo (default=1960)
+def carro_antigo(car_data, threshold_year=1960, car_name=''):
+    if car_name == '':
+        return list(filter(lambda car: int(car['yearCar'][:4]) < threshold_year, car_data))
+    else:
+        return list(filter(lambda car: int(car['yearCar'][:4]) < threshold_year and car['model'] == car_name, car_data))
+
+# Função para buscar fabricantes por parte do nome
+def busca_fabricantes_por_nome(car_data, nome):
+    return list( filter( lambda car: car['manufacturer'].__contains__(nome) , car_data ) )
+    
+# Função para contar a quantidade de modelos fabricados por um fabricante
+def qtd_modelos_fabricante(car_data, fabricante):
+    return len( list( filter( lambda car: car['manufacturer'] == fabricante, car_data ) ) )
+
+# Função para contar a quantidade de modelos de fabricantes cujo ano de fundação seja na década de 1930
+def qtd_modelos_fabricante_30s(car_data, fabricante):
+    return len(list(filter(lambda car: car['manufacturer'] == fabricante and 1930 <= int(car['foundingYear'][:4]) < 1940, car_data)))
+
+# Função para verificar se um fabricante fornece carros mundialmente
+def fabricantes_que_vendem_mundialmente(car_data, fabricante):
+    filtered = list(filter(lambda car: car['manufacturer'] == fabricante, car_data))
+    if not any("Worldwide" in car['areaServed'] for car in filtered):
+        return len(set(car['areaServed'] for car in filtered)) > 4
+    return True if any("Worldwide" in car['areaServed'] for car in filtered) else False
+
+# Função para encontrar carros concorrentes
+def carros_concorrentes(car_data, modelo1, modelo2):
+    cars_modelo1 = list(filter(lambda car: car['model'] == modelo1, car_data))
+    cars_modelo2 = list(filter(lambda car: car['model'] == modelo2, car_data))
+    if not cars_modelo1 or not cars_modelo2:
+        return False
+    car1 = cars_modelo1[0]
+    car2 = cars_modelo2[0]
+    return car1['class'] == car2['class'] and car1['yearCar'] == car2['yearCar']
+
+# Função para verificar se um carro é confiável
+def carro_confiavel(car_data, modelo):
+    cars_modelo = list(filter(lambda car: car['model'] == modelo, car_data))
+    if not cars_modelo:
+        return False
+    car = cars_modelo[0]
+    fabricante = car['manufacturer']
+    fabricante_info = list(filter(lambda car: car['manufacturer'] == fabricante, car_data))
+    if not fabricante_info:
+        return False
+    fabricante_years = [int(info['yearCar'][:4]) for info in fabricante_info]
+    if max(fabricante_years) - min(fabricante_years) > 20:
+        return True
+    return False
+
+# Função para obter a década de lançamento de um carro
+def decada_de_lancamento_do_carro(car_data, modelo):
+    cars_modelo = list(filter(lambda car: car['model'] == modelo, car_data))
+    if not cars_modelo:
+        return None
+    car = cars_modelo[0]
+    year = int(car['yearCar'][:4])
+    return year - (year % 10)
+
+# Função para verificar se um modelo foi lançado no último ano
+def novo_modelo(car_data, modelo, last_year):
+    cars_modelo = list(filter(lambda car: car['model'] == modelo, car_data))
+    if not cars_modelo:
+        return False
+    car = cars_modelo[0]
+    return int(car['yearCar'][:4]) == last_year
+
+# Função para contar a quantidade de fabricantes por país
+def qtd_fabricantes_por_pais(car_data):
+    fabricantes_pais = {}
+    for car in car_data:
+        pais = car['manufacturerCountry']
+        if pais in fabricantes_pais:
+            fabricantes_pais[pais] += 1
+        else:
+            fabricantes_pais[pais] = 1
+    return fabricantes_pais
+
+# =======================================================================================
+# ======================================== REGRAS =======================================
+# =======================================================================================
+
+
+# =======================================================================================
+# ====================================== CONSULTAS ======================================
+# =======================================================================================
 
 # Pegando os resultados e "limpando eles"
-CARS_DATA = getRes(RESULTS)
+CARS_DATA = getResults(RESULTS)
+
+## 1. Consultas relacionadas aos carros:
+## 1.1 Consulta de todos os carros:
+# print(CARS_DATA)
+## 1.2 Consulta de carros lançados em uma data específica (exemplo: 1 de janeiro de 2023):
+# print(busca_carro_por_ano(CARS_DATA, 2023))
+## 1.3 Consulta de informações de um carro específico (exemplo: Lamborghini Aventador):
+# print(busca_carro_por_nome(CARS_DATA, 'Lamborghini Aventador'))
+## 1.4 Consulta de informações de carros de um Classe (exemplo: Executive car):
+# print(busca_carro_por_classe(CARS_DATA, 'Executive car'))
+
+
+## 2. Consultas relacionadas a carros antigos:
+## 2.1 Consulta de carros antigos em geral:
+# print(carro_antigo(CARS_DATA))
+## 2.2 Consulta de um carro antigo específico (exemplo: Fiat 1100):
+# print(carro_antigo(CARS_DATA, car_name='Fiat 1100'))                                                    # ESTÁ CORRETO DESSA FORMA?
+
+## 3. Consultas de busca por nome de carro:
+## 3.1 Consulta de carros que contêm a palavra "Corolla" no nome:
+# print(busca_carro_por_nome(CARS_DATA, 'Corolla'))
+## 3.2 Consulta de carros que contêm a palavra "Lamborghini" no nome e foram lançados em 2020:
+# print(busca_carro_por_ano(busca_carro_por_nome(CARS_DATA, 'Lamborghini'), 2020))
+
+# =========== ATÉ AQUI ===========
+
+## 4. Consultas relacionadas a fabricantes de carros:
+## 4.1 Consulta de fabricantes de um modelo específico (exemplo: Cadillac Celestiq):
+# print(busca_fabricantes_por_nome(CARS_DATA, 'Cadillac Celestiq'))                                     (?????????????????? COMO FAZER ISSO?)
+## 4.2 Consulta de quantidade de modelos fabricados por um fabricante (exemplo: Toyota):
+# print(qtd_modelos_fabricante(CARS_DATA, 'Toyota'))
+
+## 5. Consultas relacionadas a década de lançamento do carro:
+## 5.1 Consulta de década de lançamento de um modelo específico (exemplo: Toyota RAV4):
+# print(decada_de_lancamento_do_carro(CARS_DATA, 'Toyota RAV4'))
+## 5.2 Consulta de carros lançados na década de 2000:
+# print(busca_carro_por_ano(CARS_DATA, 2000))                                                 (ERRADO! AJUSTAR!)
+
 
 # Exemplo de uso: filtrar carros lançados antes de 1960
-# print(filtra_carros_por_ano(CARS_DATA, '1960-01-01'))
+# print(carro_antigo(CARS_DATA, '1960-01-01'))
 
 # Exemplo de uso: filtrar modelos que contenham o nome "Corolla"
-# print(filtra_modelo_nome(CARS_DATA, 'Corolla'))
+# print(busca_carro_por_nome(CARS_DATA, 'Corolla'))
 
 # Exemplo de uso: filtrar fabricantes que contenham o nome "Toyota"
-print(filtra_fabricantes_nome(CARS_DATA, 'Toyota'))
+# print(len(busca_fabricantes_por_nome(CARS_DATA, 'Toyota')))
 
+# Exemplo de uso: filtrar fabricantes que contenham o nome "Toyota"
+# print(len(busca_fabricantes_por_nome(CARS_DATA, 'Toyota')))
 
-
+# =======================================================================================
+# ====================================== CONSULTAS ======================================
+# =======================================================================================
 
 
 
