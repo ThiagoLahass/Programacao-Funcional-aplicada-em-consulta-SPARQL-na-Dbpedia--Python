@@ -53,22 +53,22 @@ RESULTS = sparql.query().convert()
 # ======================================== REGRAS =======================================
 # =======================================================================================
 
-# Processar os resultados
+# Processar os resultados 
 def getResults(results):
     VALUES = results['results']['bindings']
     return list( map ( lambda item: dict( map ( lambda key: (key, item[key]['value']), item.keys() )), VALUES) )
 
-# Função para buscar carros pelo nome exato
+# Função para buscar carros pelo nome exato 
 def busca_carro_por_nome_exato(car_data, name):
     return list( filter( lambda car: car['model'] == name , car_data ) )
 
-# Função para buscar carros por parte do nome
+# Função para buscar carros por parte do nome 
 def busca_carro_por_nome_contem(car_data, name):
     return list( filter( lambda car: car['model'].__contains__(name) , car_data ) )
 
-# Função para associar os carros às suas propriedades
+# Função para associar os carros às suas propriedades 
 def carros(car_data, modelo=None, classe=None, ano=None):
-    # Filtragem por modelo, classe e data
+    # Filtragem por modelo, classe e data 
     carros_filtrados = []
     for car in car_data:
         if (not modelo or car['model'] == modelo) and \
@@ -77,16 +77,16 @@ def carros(car_data, modelo=None, classe=None, ano=None):
             carros_filtrados.append({'model': car['model'], 'class': car['class'], 'yearCar': car['yearCar'], 'manufacturer': car['manufacturer']})
     return carros_filtrados
 
-# Função para verificar se um carro é antigo (default=1960)
+# Função para verificar se um carro é antigo (default=1960) 
 def carro_antigo(car_data, car_name=None, threshold_year=1960):
     if car_name is None:
-        # Consulta aberta: retorna todos os carros antigos (lançados antes de 1960)
+        # Consulta aberta: retorna todos os carros antigos (lançados antes de 1960) 
         return list( filter(lambda car: int(car['yearCar'][:4]) < threshold_year, carros(car_data)) )
     else:
-        # Consulta fechada: retorna True se o carro específico é antigo, False caso contrário
+        # Consulta fechada: retorna True se o carro específico é antigo, False caso contrário 
         return reduce(lambda result, car: result or (int(car['yearCar'][:4]) < threshold_year and car['model'] == car_name), car_data, False) 
 
-# Função para buscar um carro por parte do nome dele através do uso de string
+# Função para buscar um carro por parte do nome dele através do uso de string 
 def carros_busca(car_data, termo_busca, classe=None, ano=None):
     filtered_cars = []
     for car in carros(car_data):
@@ -96,7 +96,7 @@ def carros_busca(car_data, termo_busca, classe=None, ano=None):
             filtered_cars.append(car)
     return filtered_cars
 
-# Função para associar os modelos aos seus respectivos fabricantes
+# Função para associar os modelos aos seus respectivos fabricantes 
 def carros_fabricante(car_data, modelo=None, fabricante=None):
     carros_fabricantes = {car['model']: car['manufacturer'] for car in carros(car_data)}
 
@@ -107,49 +107,49 @@ def carros_fabricante(car_data, modelo=None, fabricante=None):
     else:
         return carros_fabricantes
 
-# Função para associar os fabricantes às suas propriedades
+# Função para associar os fabricantes às suas propriedades 
 def fabricante_de_carros(car_data, fabricante=None, ano_fundacao=None, pais=None, area_servida=None):
     fabricantes = {car['manufacturer']: {'foundingYear': car['foundingYear'], 'manufacturerCountry': car['manufacturerCountry'], 'areaServed': car['areaServed']} for car in car_data}
     
-    # Filtragem por fabricante
+    # Filtragem por fabricante 
     if fabricante is not None:
         fabricantes = {fabricante: fabricantes.get(fabricante)} if fabricante in fabricantes else {}
     
-    # Filtragem por ano de fundação
+    # Filtragem por ano de fundação 
     if ano_fundacao is not None:
         fabricantes = {fabricante: info for fabricante, info in fabricantes.items() if int(info['foundingYear'][:4]) == ano_fundacao}
     
-    # Filtragem por país
+    # Filtragem por país 
     if pais is not None:
         fabricantes = {fabricante: info for fabricante, info in fabricantes.items() if info['manufacturerCountry'] == pais}
     
-    # Filtragem por área servida
+    # Filtragem por área servida 
     if area_servida is not None:
         fabricantes = {fabricante: info for fabricante, info in fabricantes.items() if area_servida in info['areaServed']}
     
     return fabricantes
 
-# Função para contar a quantidade de modelos fabricados por um fabricante
+# Função para contar a quantidade de modelos fabricados por um fabricante 
 def qtd_modelos_fabricante(car_data, fabricante=None):
     carros_fabricantes = carros_fabricante(car_data)
 
     if fabricante is None:
-        # Consulta aberta: retorna a lista com as quantidades de cada fabricante
+        # Consulta aberta: retorna a lista com as quantidades de cada fabricante 
         return reduce(lambda count_dict, modelo: {**count_dict, modelo: count_dict.get(modelo, 0) + 1}, carros_fabricantes.values(), {})
     else:
-        # Consulta fechada: retorna a quantidade de modelos do fabricante especificado
+        # Consulta fechada: retorna a quantidade de modelos do fabricante especificado 
         return sum(1 for modelo, fab in carros_fabricantes.items() if fab == fabricante)
 
-# Função para contar a quantidade de modelos de fabricantes cujo ano de fundação seja na década de 1930
+# Função para contar a quantidade de modelos de fabricantes cujo ano de fundação seja na década de 1930 
 def qtd_modelos_fabricante_30s(car_data, fabricante=None):
     carros_decada = [car for car in car_data if 1930 <= int(car['foundingYear'][:4]) < 1940]
     return qtd_modelos_fabricante(carros_decada, fabricante)
         
-# Função para verificar se um fabricante fornece carros mundialmente
+# Função para verificar se um fabricante fornece carros mundialmente 
 def fabricantes_que_vendem_mundialmente(car_data, fabricante=None):
     if fabricante == None:
-        # Consulta aberta: retorna todos os fabricantes que servem mundialmente
-        fabricantes_mundiais = set() # remove duplicatas
+        # Consulta aberta: retorna todos os fabricantes que servem mundialmente 
+        fabricantes_mundiais = set() # remove duplicatas 
         for car1 in car_data:
             if "Worldwide" in car1['areaServed']:
                 fabricantes_mundiais.add(car1['manufacturer'])
@@ -157,19 +157,19 @@ def fabricantes_que_vendem_mundialmente(car_data, fabricante=None):
                 fabricantes_mundiais.add(car1['manufacturer'])
         return list(fabricantes_mundiais)
     else:
-        # Consulta fechada: verifica se um fabricante específico serve mundialmente
+        # Consulta fechada: verifica se um fabricante específico serve mundialmente 
         filtered = list(filter(lambda car: car['manufacturer'] == fabricante, car_data))
         if not any("Worldwide" in car['areaServed'] for car in filtered):
             return len(set(car['areaServed'] for car in filtered)) > 4
         return True if any("Worldwide" in car['areaServed'] for car in filtered) else False
 
-# Função para encontrar carros concorrentes (classe só é usada caso não seja passado nenhum modelo)
+# Função para encontrar carros concorrentes (classe só é usada caso não seja passado nenhum modelo) 
 def carros_concorrentes(car_data, modelo1=None, modelo2=None, classe=None):
     car_data = carros(car_data)
     if modelo1 is None and modelo2 is None:
         if classe is None:
-            # Consulta aberta: retorna todos os modelos concorrentes
-            concorrentes = set()   # Remove duplicatas
+            # Consulta aberta: retorna todos os modelos concorrentes 
+            concorrentes = set()   # Remove duplicatas 
             for car1 in car_data:
                 for car2 in car_data:
                     if car1 != car2 and car1['manufacturer'] != car2['manufacturer'] and \
@@ -177,8 +177,8 @@ def carros_concorrentes(car_data, modelo1=None, modelo2=None, classe=None):
                         concorrentes.add((car1['model'], car2['model']))
             return list(concorrentes)
         else:
-             # Consulta aberta mas classe definida: retorna todos os modelos concorrentes da classe escolhida
-            concorrentes = set()   # Remove duplicatas
+             # Consulta aberta mas classe definida: retorna todos os modelos concorrentes da classe escolhida 
+            concorrentes = set()   # Remove duplicatas 
             for car1 in car_data:
                 for car2 in car_data:
                     if car1 != car2 and car1['class'] == classe and car2['class'] == classe and \
@@ -187,8 +187,8 @@ def carros_concorrentes(car_data, modelo1=None, modelo2=None, classe=None):
             return list(concorrentes)
 
     elif modelo1 is not None and modelo2 is None:
-        # Consulta semi-aberta: retorna modelos concorrentes ao modelo1
-        concorrentes_modelo1 = set() # remove duplicatas
+        # Consulta semi-aberta: retorna modelos concorrentes ao modelo1 
+        concorrentes_modelo1 = set() # remove duplicatas 
         modelo1 = busca_carro_por_nome_exato(car_data, modelo1)
         for car in car_data:
             if car['class'] == modelo1[0]['class'] and car['manufacturer'] != modelo1[0]['manufacturer'] and \
@@ -197,7 +197,7 @@ def carros_concorrentes(car_data, modelo1=None, modelo2=None, classe=None):
         return concorrentes_modelo1
 
     else:
-        # Consulta fechada: verifica se os modelos são concorrentes
+        # Consulta fechada: verifica se os modelos são concorrentes 
         car1 = busca_carro_por_nome_exato(car_data, modelo1)
         car2 = busca_carro_por_nome_exato(car_data,modelo2)
         if not car1 or not car2:
@@ -205,18 +205,18 @@ def carros_concorrentes(car_data, modelo1=None, modelo2=None, classe=None):
         return car1[0]['manufacturer'] != car2[0]['manufacturer'] and \
                car1[0]['class'] == car2[0]['class'] and car1[0]['yearCar'] == car2[0]['yearCar']
 
-# Função para verificar carros confiáveis
+# Função para verificar carros confiáveis 
 def carro_confiavel(car_data, modelo=None):
     if modelo is None:
-        # Consulta aberta: retorna todos os modelos confiáveis
-        confiaveis = set() # remove duplicatas
+        # Consulta aberta: retorna todos os modelos confiáveis 
+        confiaveis = set() # remove duplicatas 
         for car in car_data:
             if int(car['foundingYear'][:4]) <= 2004 and fabricantes_que_vendem_mundialmente(car_data, car['manufacturer']) and not carro_antigo(car_data, car_name=car['model']):
                 confiaveis.add(car['model'])
         return confiaveis
 
     else:
-        # Consulta fechada: verifica se um modelo específico é confiável
+        # Consulta fechada: verifica se um modelo específico é confiável 
         car = list(filter(lambda car: car['model'] == modelo, car_data))
         if not car:
             return False
@@ -225,18 +225,18 @@ def carro_confiavel(car_data, modelo=None):
             return True
         return False
 
-# Função para obter a década de lançamento de um carro
+# Função para obter a década de lançamento de um carro 
 def decada_de_lancamento_do_carro(car_data, modelo=None, decada=0):
     if modelo is None:
         if decada == 0:
-            # Consulta aberta: retorna todos os modelos com suas respectivas décadas de lançamento
+            # Consulta aberta: retorna todos os modelos com suas respectivas décadas de lançamento 
             modelos_decada = set()
             for car in carros(car_data):
                 year = int(car['yearCar'][:4])
                 modelos_decada.add((car['model'], year - (year % 10)))
             return modelos_decada
         else:
-            # Consulta semi-aberta: retorna todos os carros lançados na década especificada
+            # Consulta semi-aberta: retorna todos os carros lançados na década especificada 
             carros_decada = set()
             for car in carros(car_data):
                 year = int(car['yearCar'][:4])
@@ -245,7 +245,7 @@ def decada_de_lancamento_do_carro(car_data, modelo=None, decada=0):
             return carros_decada
 
     else:
-        # Consulta fechada: retorna a década de lançamento do modelo específico
+        # Consulta fechada: retorna a década de lançamento do modelo específico 
         car_modelo = next((car for car in carros(car_data) if car['model'] == modelo), None)
         if car_modelo:
             year = int(car_modelo['yearCar'][:4])
@@ -253,24 +253,24 @@ def decada_de_lancamento_do_carro(car_data, modelo=None, decada=0):
         else:
             return None
 
-# Função para verificar se determinado modelo foi lançado no ultimo ano
+# Função para verificar se determinado modelo foi lançado no ultimo ano 
 def novo_modelo(car_data, modelo=None, current_year=2024):
     if modelo is None:
-        # Consulta aberta: retorna todos os modelos novos
+        # Consulta aberta: retorna todos os modelos novos 
         modelos_novos = set()
         for car in carros(car_data):
             if int(car['yearCar'][:4]) == current_year:
                 modelos_novos.add(car['model'])
         return modelos_novos
     else:
-        # Consulta fechada: verifica se o modelo específico foi lançado no último ano
+        # Consulta fechada: verifica se o modelo específico foi lançado no último ano 
         cars_modelo = list(filter(lambda car: car['model'] == modelo, carros(car_data)))
         if not cars_modelo:
             return False
         car = cars_modelo[0]
         return int(car['yearCar'][:4]) == current_year
 
-# Função para verificar a quantidade de fabricantes por país
+# Função para verificar a quantidade de fabricantes por país 
 def qtd_fabricantes_por_pais(car_data, pais=None):
     fabricantes_paises = {car['manufacturer']: car['manufacturerCountry'] for car in car_data}
     if pais is None:
