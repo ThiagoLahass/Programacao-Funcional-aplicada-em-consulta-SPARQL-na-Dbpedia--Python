@@ -66,6 +66,7 @@ def busca_carro_por_nome_exato(car_data, name):
 def busca_carro_por_nome_contem(car_data, name):
     return list( filter( lambda car: car['model'].__contains__(name) , car_data ) )
 
+# Função para associar os carros às suas propriedades
 def carros(car_data, modelo=None, classe=None, ano=None):
     # Filtragem por modelo, classe e data
     carros_filtrados = []
@@ -85,6 +86,7 @@ def carro_antigo(car_data, car_name=None, threshold_year=1960):
         # Consulta fechada: retorna True se o carro específico é antigo, False caso contrário
         return reduce(lambda result, car: result or (int(car['yearCar'][:4]) < threshold_year and car['model'] == car_name), car_data, False) 
 
+# Função para buscar um carro por parte do nome dele através do uso de string
 def carros_busca(car_data, termo_busca, classe=None, ano=None):
     filtered_cars = []
     for car in carros(car_data):
@@ -94,6 +96,7 @@ def carros_busca(car_data, termo_busca, classe=None, ano=None):
             filtered_cars.append(car)
     return filtered_cars
 
+# Função para associar os modelos aos seus respectivos fabricantes
 def carros_fabricante(car_data, modelo=None, fabricante=None):
     carros_fabricantes = {car['model']: car['manufacturer'] for car in carros(car_data)}
 
@@ -104,6 +107,7 @@ def carros_fabricante(car_data, modelo=None, fabricante=None):
     else:
         return carros_fabricantes
 
+# Função para associar os fabricantes às suas propriedades
 def fabricante_de_carros(car_data, fabricante=None, ano_fundacao=None, pais=None, area_servida=None):
     fabricantes = {car['manufacturer']: {'foundingYear': car['foundingYear'], 'manufacturerCountry': car['manufacturerCountry'], 'areaServed': car['areaServed']} for car in car_data}
     
@@ -248,7 +252,8 @@ def decada_de_lancamento_do_carro(car_data, modelo=None, decada=0):
             return year - (year % 10)
         else:
             return None
-    
+
+# Função para verificar se determinado modelo foi lançado no ultimo ano
 def novo_modelo(car_data, modelo=None, current_year=2024):
     if modelo is None:
         # Consulta aberta: retorna todos os modelos novos
@@ -265,6 +270,7 @@ def novo_modelo(car_data, modelo=None, current_year=2024):
         car = cars_modelo[0]
         return int(car['yearCar'][:4]) == current_year
 
+# Função para verificar a quantidade de fabricantes por país
 def qtd_fabricantes_por_pais(car_data, pais=None):
     fabricantes_paises = {car['manufacturer']: car['manufacturerCountry'] for car in car_data}
     if pais is None:
